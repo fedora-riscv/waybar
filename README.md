@@ -1,0 +1,3 @@
+# waybar
+
+The waybar package
