@@ -1,13 +1,10 @@
 Name:           waybar
-Version:        0.9.0
+Version:        0.9.1
 Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 License:        MIT
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-
-# Alexays/Waybar#554 - crash on connecting/disconnecting monitors
-Patch0:         %{url}/commit/f80270519b55d7b12d06538df5d989c615eea1df.patch#/use-std-list-to-store-outputs.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -15,6 +12,7 @@ BuildRequires:  meson >= 0.47.0
 BuildRequires:  scdoc
 BuildRequires:  systemd-rpm-macros
 
+BuildRequires:  pkgconfig(date)
 BuildRequires:  pkgconfig(dbusmenu-gtk3-0.4)
 BuildRequires:  pkgconfig(fmt) >= 5.3.0
 BuildRequires:  pkgconfig(gdk-pixbuf-2.0)
@@ -40,7 +38,7 @@ Recommends:     fontawesome-fonts
 %{summary}.
 
 %prep
-%autosetup -p 1 -n Waybar-%{version}
+%autosetup -n Waybar-%{version}
 
 %build
 %meson
@@ -63,5 +61,10 @@ Recommends:     fontawesome-fonts
 %exclude %{_userunitdir}/%{name}.service
 
 %changelog
+* Mon Feb 10 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.1-1
+- Update to 0.9.1
+- Remove upstreamed patch
+- Add BuildRequires: pkgconfig(date)
+
 * Sat Feb 08 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.0-1
 - Initial import (#1798811)
