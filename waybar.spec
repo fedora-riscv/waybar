@@ -1,8 +1,9 @@
 Name:           waybar
-Version:        0.9.1
+Version:        0.9.2
 Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
-License:        MIT
+# MIT for main package, Boost for bundled clara.hpp
+License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 
@@ -61,6 +62,9 @@ Recommends:     fontawesome-fonts
 %exclude %{_userunitdir}/%{name}.service
 
 %changelog
+* Sat Apr 11 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.2-1
+- Update to 0.9.2
+
 * Mon Feb 10 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.1-1
 - Update to 0.9.1
 - Remove upstreamed patch
