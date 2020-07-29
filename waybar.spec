@@ -1,6 +1,6 @@
 Name:           waybar
 Version:        0.9.2
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
@@ -62,6 +62,9 @@ Recommends:     fontawesome-fonts
 %exclude %{_userunitdir}/%{name}.service
 
 %changelog
+* Wed Jul 29 2020 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.2-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
+
 * Sat May 30 2020 Björn Esser <besser82@fedoraproject.org> - 0.9.2-2
 - Rebuild (jsoncpp)
 
