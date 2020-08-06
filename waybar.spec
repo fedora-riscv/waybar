@@ -1,6 +1,6 @@
 Name:           waybar
-Version:        0.9.2
-Release:        4%{?dist}
+Version:        0.9.3
+Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
@@ -63,6 +63,9 @@ Recommends:     fontawesome-fonts
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Wed Aug 05 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.3-1
+- Update to 0.9.3
+
 * Mon Aug 03 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.2-4
 - Rebuild (date)
 
