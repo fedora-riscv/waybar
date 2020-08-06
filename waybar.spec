@@ -6,6 +6,8 @@ Summary:        Highly customizable Wayland bar for Sway and Wlroots based compo
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+# make wlr/taskbar config options match manual
+Patch0:         %{url}/pull/798.patch#/minor-string-fixes-to-wlr-taskbar.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -40,7 +42,7 @@ Recommends:     fontawesome-fonts
 %{summary}.
 
 %prep
-%autosetup -n Waybar-%{version}
+%autosetup -p1 -n Waybar-%{version}
 
 %build
 # FIXME: disable user service until a proper way to start it has been decided
@@ -64,7 +66,8 @@ Recommends:     fontawesome-fonts
 
 %changelog
 * Wed Aug 05 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.3-1
-- Update to 0.9.3
+- Update to 0.9.3 (closes rhbz#1866571)
+- Add patch for wlr/taskbar config strings
 
 * Mon Aug 03 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.2-4
 - Rebuild (date)
