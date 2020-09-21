@@ -1,0 +1,276 @@
+From 246f7bf555e17dcdb0f765aca3b852382b4075df Mon Sep 17 00:00:00 2001
+From: excellentname <excellentname@protonmail.com>
+Date: Tue, 21 Jul 2020 12:36:48 +1000
+Subject: [PATCH 1/2] Handle SIGCHLD for exec/forkExec
+
+When forkExec is called it begins to ignore all SIGCHLD signals for
+the rest of the progam's execution so that they are automatically
+reaped. However, this means that subsequent waitpid calls in the exec
+function will always fail. So instead handle SIGCHLD by reaping any
+processes created by forkExec and ignoring all others so that they can be
+handled directly by the exec function.
+---
+ include/util/command.hpp | 12 ++++++++++--
+ src/main.cpp             | 26 ++++++++++++++++++++++++++
+ 2 files changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/include/util/command.hpp b/include/util/command.hpp
+index a72a8294..9db8d833 100644
+--- a/include/util/command.hpp
++++ b/include/util/command.hpp
+@@ -7,6 +7,9 @@
+ 
+ #include <array>
+ 
++extern sig_atomic_t is_inserting_pid;
++extern std::list<pid_t> reap;
++
+ namespace waybar::util::command {
+ 
+ struct res {
+@@ -32,10 +35,11 @@ inline std::string read(FILE* fp) {
+ 
+ inline int close(FILE* fp, pid_t pid) {
+   int stat = -1;
++  pid_t ret;
+ 
+   fclose(fp);
+   do {
+-    waitpid(pid, &stat, WCONTINUED | WUNTRACED);
++    ret = waitpid(pid, &stat, WCONTINUED | WUNTRACED);
+ 
+     if (WIFEXITED(stat)) {
+       spdlog::debug("Cmd exited with code {}", WEXITSTATUS(stat));
+@@ -45,6 +49,8 @@ inline int close(FILE* fp, pid_t pid) {
+       spdlog::debug("Cmd stopped by {}", WSTOPSIG(stat));
+     } else if (WIFCONTINUED(stat)) {
+       spdlog::debug("Cmd continued");
++    } else if (ret == -1) {
++      spdlog::debug("waitpid failed: {}", strerror(errno));
+     } else {
+       break;
+     }
+@@ -111,7 +117,9 @@ inline int32_t forkExec(const std::string& cmd) {
+     execl("/bin/sh", "sh", "-c", cmd.c_str(), (char*)0);
+     exit(0);
+   } else {
+-    signal(SIGCHLD, SIG_IGN);
++    is_inserting_pid = true;
++    reap.push_back(pid);
++    is_inserting_pid = false;
+   }
+ 
+   return pid;
+diff --git a/src/main.cpp b/src/main.cpp
+index f066cf85..5350ec09 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -1,7 +1,32 @@
+ #include <csignal>
++#include <list>
++#include <sys/types.h>
++#include <sys/wait.h>
+ #include <spdlog/spdlog.h>
+ #include "client.hpp"
+ 
++sig_atomic_t is_inserting_pid = false;
++std::list<pid_t> reap;
++
++static void handler(int sig) {
++  int saved_errno = errno;
++  if (!is_inserting_pid) {
++    for (auto it = reap.begin(); it != reap.end(); ++it) {
++      if (waitpid(*it, nullptr, WNOHANG) == *it) {
++        it = reap.erase(it);
++      }
++    }
++  }
++  errno = saved_errno;
++}
++
++inline void installSigChldHandler(void) {
++  struct sigaction sa;
++  sigemptyset(&sa.sa_mask);
++  sa.sa_handler = handler;
++  sigaction(SIGCHLD, &sa, nullptr);
++}
++
+ int main(int argc, char* argv[]) {
+   try {
+     auto client = waybar::Client::inst();
+@@ -18,6 +43,7 @@ int main(int argc, char* argv[]) {
+         }
+       });
+     }
++    installSigChldHandler();
+ 
+     auto ret = client->main(argc, argv);
+     delete client;
+
+From c3359dec1b3a711f2912aab6c11009a8c46d2fe2 Mon Sep 17 00:00:00 2001
+From: excellentname <excellentname@protonmail.com>
+Date: Sat, 25 Jul 2020 21:02:59 +1000
+Subject: [PATCH 2/2] Replace signal handler with signal handling thread
+
+---
+ include/util/command.hpp | 22 ++++++++++---
+ src/main.cpp             | 70 +++++++++++++++++++++++++++++++---------
+ 2 files changed, 72 insertions(+), 20 deletions(-)
+
+diff --git a/include/util/command.hpp b/include/util/command.hpp
+index 9db8d833..52655581 100644
+--- a/include/util/command.hpp
++++ b/include/util/command.hpp
+@@ -7,7 +7,7 @@
+ 
+ #include <array>
+ 
+-extern sig_atomic_t is_inserting_pid;
++extern std::mutex reap_mtx;
+ extern std::list<pid_t> reap;
+ 
+ namespace waybar::util::command {
+@@ -71,6 +71,12 @@ inline FILE* open(const std::string& cmd, int& pid) {
+   }
+ 
+   if (!child_pid) {
++    int err;
++    sigset_t mask;
++    sigfillset(&mask);
++    // Reset sigmask
++    err = pthread_sigmask(SIG_UNBLOCK, &mask, nullptr);
++    if (err != 0) spdlog::error("pthread_sigmask in open failed: {}", strerror(err));
+     ::close(fd[0]);
+     dup2(fd[1], 1);
+     setpgid(child_pid, child_pid);
+@@ -103,7 +109,7 @@ inline struct res execNoRead(const std::string& cmd) {
+ inline int32_t forkExec(const std::string& cmd) {
+   if (cmd == "") return -1;
+ 
+-  int32_t pid = fork();
++  pid_t pid = fork();
+ 
+   if (pid < 0) {
+     spdlog::error("Unable to exec cmd {}, error {}", cmd.c_str(), strerror(errno));
+@@ -112,14 +118,20 @@ inline int32_t forkExec(const std::string& cmd) {
+ 
+   // Child executes the command
+   if (!pid) {
++    int err;
++    sigset_t mask;
++    sigfillset(&mask);
++    // Reset sigmask
++    err = pthread_sigmask(SIG_UNBLOCK, &mask, nullptr);
++    if (err != 0) spdlog::error("pthread_sigmask in forkExec failed: {}", strerror(err));
+     setpgid(pid, pid);
+-    signal(SIGCHLD, SIG_DFL);
+     execl("/bin/sh", "sh", "-c", cmd.c_str(), (char*)0);
+     exit(0);
+   } else {
+-    is_inserting_pid = true;
++    reap_mtx.lock();
+     reap.push_back(pid);
+-    is_inserting_pid = false;
++    reap_mtx.unlock();
++    spdlog::debug("Added child to reap list: {}", pid);
+   }
+ 
+   return pid;
+diff --git a/src/main.cpp b/src/main.cpp
+index 5350ec09..19a8de1e 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -1,30 +1,70 @@
+ #include <csignal>
+ #include <list>
++#include <mutex>
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <spdlog/spdlog.h>
+ #include "client.hpp"
+ 
+-sig_atomic_t is_inserting_pid = false;
++std::mutex reap_mtx;
+ std::list<pid_t> reap;
+ 
+-static void handler(int sig) {
+-  int saved_errno = errno;
+-  if (!is_inserting_pid) {
+-    for (auto it = reap.begin(); it != reap.end(); ++it) {
+-      if (waitpid(*it, nullptr, WNOHANG) == *it) {
+-        it = reap.erase(it);
+-      }
++void* signalThread(void* args) {
++  int err, signum;
++  sigset_t mask;
++  sigemptyset(&mask);
++  sigaddset(&mask, SIGCHLD);
++
++  while (true) {
++    err = sigwait(&mask, &signum);
++    if (err != 0) {
++      spdlog::error("sigwait failed: {}", strerror(errno));
++      continue;
++    }
++
++    switch (signum) {
++      case SIGCHLD:
++        spdlog::debug("Received SIGCHLD in signalThread");
++        if (!reap.empty()) {
++          reap_mtx.lock();
++          for (auto it = reap.begin(); it != reap.end(); ++it) {
++            if (waitpid(*it, nullptr, WNOHANG) == *it) {
++              spdlog::debug("Reaped child with PID: {}", *it);
++              it = reap.erase(it);
++            }
++          }
++          reap_mtx.unlock();
++        }
++        break;
++      default:
++        spdlog::debug("Received signal with number {}, but not handling",
++                      signum);
++        break;
+     }
+   }
+-  errno = saved_errno;
+ }
+ 
+-inline void installSigChldHandler(void) {
+-  struct sigaction sa;
+-  sigemptyset(&sa.sa_mask);
+-  sa.sa_handler = handler;
+-  sigaction(SIGCHLD, &sa, nullptr);
++void startSignalThread(void) {
++  int err;
++  sigset_t mask;
++  sigemptyset(&mask);
++  sigaddset(&mask, SIGCHLD);
++
++  // Block SIGCHLD so it can be handled by the signal thread
++  // Any threads created by this one (the main thread) should not
++  // modify their signal mask to unblock SIGCHLD
++  err = pthread_sigmask(SIG_BLOCK, &mask, nullptr);
++  if (err != 0) {
++    spdlog::error("pthread_sigmask failed in startSignalThread: {}", strerror(err));
++    exit(1);
++  }
++
++  pthread_t thread_id;
++  err = pthread_create(&thread_id, nullptr, signalThread, nullptr);
++  if (err != 0) {
++    spdlog::error("pthread_create failed in startSignalThread: {}", strerror(err));
++    exit(1);
++  }
+ }
+ 
+ int main(int argc, char* argv[]) {
+@@ -43,7 +83,7 @@ int main(int argc, char* argv[]) {
+         }
+       });
+     }
+-    installSigChldHandler();
++    startSignalThread();
+ 
+     auto ret = client->main(argc, argv);
+     delete client;
