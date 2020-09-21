@@ -1,20 +1,11 @@
 Name:           waybar
-Version:        0.9.3
-Release:        2%{?dist}
+Version:        0.9.4
+Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-# make wlr/taskbar config options match manual
-Patch0:         %{url}/pull/798.patch#/minor-string-fixes-to-wlr-taskbar.patch
-# fix regression with custom module signal handling
-Patch1:         %{url}/pull/778.patch#/Handle-SIGCHLD-for-exec-forkExec.patch
-# fix crash in network module
-Patch2:         %{url}/pull/813.patch#/Fix-crash-with-fmt.patch
-# fix regression in network and mpd modules
-# https://github.com/Alexays/Waybar/issues/838
-Patch3:         revert-fix-cancel-thread-and-fix-window-close.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -72,6 +63,9 @@ Recommends:     fontawesome-fonts
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Mon Sep 21 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.4-1
+- Update to 0.9.4
+
 * Sun Sep 20 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.3-2
 - Add patch for custom module signal handling regression
 - Add patch for network module crash with fmt 7.0
