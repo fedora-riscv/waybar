@@ -1,11 +1,12 @@
 Name:           waybar
 Version:        0.9.4
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Patch0:         %{name}-gcc11.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -63,6 +64,9 @@ Recommends:     fontawesome-fonts
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Tue Nov 03 2020 Jeff Law <law@redhat.com> - 0.9.4-2
+- Fix mising #includes for gcc-11
+
 * Mon Sep 21 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.4-1
 - Update to 0.9.4
 
