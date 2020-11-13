@@ -1,0 +1,53 @@
+From 67d54ef3d53e5257e465ec556177ea569100263e Mon Sep 17 00:00:00 2001
+From: Aleksei Bavshin <alebastr89@gmail.com>
+Date: Sat, 24 Oct 2020 22:56:24 -0700
+Subject: [PATCH] fix(wlr/taskbar): do not bind to unsupported protocol
+ versions
+
+It's not allowed to bind to a higher version of a wayland protocol than
+supported by the client. Binding wlr-foreign-toplevel-manager-v1 v3 to
+a generated code for v2 causes errors in libwayland due to a missing
+handler for `zwlr_foreign_toplevel_handle_v1.parent` event.
+---
+ src/client.cpp              | 2 ++
+ src/modules/wlr/taskbar.cpp | 5 ++++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/client.cpp b/src/client.cpp
+index 70cc22cf..9dd93d81 100644
+--- a/src/client.cpp
++++ b/src/client.cpp
+@@ -32,6 +32,8 @@ void waybar::Client::handleGlobal(void *data, struct wl_registry *registry, uint
+                                   const char *interface, uint32_t version) {
+   auto client = static_cast<Client *>(data);
+   if (strcmp(interface, zwlr_layer_shell_v1_interface.name) == 0) {
++    // limit version to a highest supported by the client protocol file
++    version = std::min<uint32_t>(version, zwlr_layer_shell_v1_interface.version);
+     client->layer_shell = static_cast<struct zwlr_layer_shell_v1 *>(
+         wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, version));
+   } else if (strcmp(interface, zxdg_output_manager_v1_interface.name) == 0 &&
+diff --git a/src/modules/wlr/taskbar.cpp b/src/modules/wlr/taskbar.cpp
+index 45915dc6..8d6fa9b4 100644
+--- a/src/modules/wlr/taskbar.cpp
++++ b/src/modules/wlr/taskbar.cpp
+@@ -653,9 +653,11 @@ void Taskbar::register_manager(struct wl_registry *registry, uint32_t name, uint
+         spdlog::warn("Register foreign toplevel manager again although already existing!");
+         return;
+     }
+-    if (version != 2) {
++    if (version < ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN_SINCE_VERSION) {
+         spdlog::warn("Using different foreign toplevel manager protocol version: {}", version);
+     }
++    // limit version to a highest supported by the client protocol file
++    version = std::min<uint32_t>(version, zwlr_foreign_toplevel_manager_v1_interface.version);
+ 
+     manager_ = static_cast<struct zwlr_foreign_toplevel_manager_v1 *>(wl_registry_bind(registry, name,
+             &zwlr_foreign_toplevel_manager_v1_interface, version));
+@@ -672,6 +674,7 @@ void Taskbar::register_seat(struct wl_registry *registry, uint32_t name, uint32_
+         spdlog::warn("Register seat again although already existing!");
+         return;
+     }
++    version = std::min<uint32_t>(version, wl_seat_interface.version);
+ 
+     seat_ = static_cast<wl_seat*>(wl_registry_bind(registry, name, &wl_seat_interface, version));
+ }
