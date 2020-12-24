@@ -1,17 +1,15 @@
 Name:           waybar
-Version:        0.9.4
-Release:        3%{?dist}
+Version:        0.9.5
+Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-Patch0:         %{name}-gcc11.patch
-Patch1:         %{url}/pull/898.patch#/waybar-0.9.4-do-not-bind-to-unsupported-protocol-versions.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
-BuildRequires:  meson >= 0.47.0
+BuildRequires:  meson >= 0.49.0
 BuildRequires:  scdoc
 #BuildRequires:  systemd-rpm-macros
 
@@ -36,7 +34,7 @@ BuildRequires:  pkgconfig(wayland-cursor)
 BuildRequires:  pkgconfig(wayland-protocols)
 
 Enhances:       sway
-Recommends:     fontawesome-fonts
+Recommends:     (font(fontawesome5free) or font(fontawesome))
 
 %description
 %{summary}.
@@ -48,6 +46,7 @@ Recommends:     fontawesome-fonts
 # FIXME: disable user service until a proper way to start it has been decided
 # see rhbz#1798811 for more context
 %meson \
+    -Dsndio=disabled \
     -Dsystemd=disabled
 %meson_build
 
@@ -65,6 +64,9 @@ Recommends:     fontawesome-fonts
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Wed Dec 23 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.5-1
+- Update to 0.9.5
+
 * Fri Nov 13 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.4-3
 - Add patch for 'wlr/taskbar' protocol error with wlroots 0.12.0
 
