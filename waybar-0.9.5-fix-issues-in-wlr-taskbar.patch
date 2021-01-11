@@ -1,0 +1,91 @@
+From ef9c3ef1cbb57afa2f64a70282fffe33e5519dfe Mon Sep 17 00:00:00 2001
+From: Aleksei Bavshin <alebastr89@gmail.com>
+Date: Wed, 6 Jan 2021 07:03:14 -0800
+Subject: [PATCH 1/2] fix(wlr/taskbar): fix wl_array out-of-bounds access
+
+wl_array->size contains the number of bytes in the array instead of the
+number of elements.
+---
+ src/modules/wlr/taskbar.cpp | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/src/modules/wlr/taskbar.cpp b/src/modules/wlr/taskbar.cpp
+index e70ad9c3..46147bd0 100644
+--- a/src/modules/wlr/taskbar.cpp
++++ b/src/modules/wlr/taskbar.cpp
+@@ -367,16 +367,16 @@ void Task::handle_output_leave(struct wl_output *output)
+ void Task::handle_state(struct wl_array *state)
+ {
+     state_ = 0;
+-    for (auto* entry = static_cast<uint32_t*>(state->data);
+-         entry < static_cast<uint32_t*>(state->data) + state->size;
+-         entry++) {
+-        if (*entry == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_MAXIMIZED)
++    size_t size = state->size / sizeof(uint32_t);
++    for (size_t i = 0; i < size; ++i) {
++        auto entry = static_cast<uint32_t*>(state->data)[i];
++        if (entry == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_MAXIMIZED)
+             state_ |= MAXIMIZED;
+-        if (*entry == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_MINIMIZED)
++        if (entry == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_MINIMIZED)
+             state_ |= MINIMIZED;
+-        if (*entry == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_ACTIVATED)
++        if (entry == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_ACTIVATED)
+             state_ |= ACTIVE;
+-        if (*entry == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN)
++        if (entry == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN)
+             state_ |= FULLSCREEN;
+     }
+ }
+
+From b79301a5bdafb2d0a7764990530898996a97c386 Mon Sep 17 00:00:00 2001
+From: Aleksei Bavshin <alebastr89@gmail.com>
+Date: Fri, 8 Jan 2021 15:07:04 -0800
+Subject: [PATCH 2/2] fix(wlr/taskbar): protocol error when reconnecting
+ outputs
+
+Destroy request is not specified for foreign toplevel manager and it
+does not prevent the compositor from sending more events.
+Libwayland would ignore events to a destroyed objects, but that could
+indirectly cause a gap in the sequence of new object ids and trigger
+error condition in the library.
+
+With this commit waybar sends a `stop` request to notify the compositor
+about the destruction of a toplevel manager. That fixes abnormal
+termination of the bar with following errors:
+```
+(waybar:11791): Gdk-DEBUG: 20:04:19.778: not a valid new object id (4278190088), message toplevel(n)
+
+Gdk-Message: 20:04:19.778: Error reading events from display: Invalid argument
+```
+---
+ src/modules/wlr/taskbar.cpp | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/src/modules/wlr/taskbar.cpp b/src/modules/wlr/taskbar.cpp
+index 46147bd0..4cbb8ce6 100644
+--- a/src/modules/wlr/taskbar.cpp
++++ b/src/modules/wlr/taskbar.cpp
+@@ -637,8 +637,20 @@ Taskbar::Taskbar(const std::string &id, const waybar::Bar &bar, const Json::Valu
+ Taskbar::~Taskbar()
+ {
+     if (manager_) {
+-        zwlr_foreign_toplevel_manager_v1_destroy(manager_);
+-        manager_ = nullptr;
++        struct wl_display *display = Client::inst()->wl_display;
++        /*
++         * Send `stop` request and wait for one roundtrip.
++         * This is not quite correct as the protocol encourages us to wait for the .finished event,
++         * but it should work with wlroots foreign toplevel manager implementation.
++         */
++        zwlr_foreign_toplevel_manager_v1_stop(manager_);
++        wl_display_roundtrip(display);
++
++        if (manager_) {
++            spdlog::warn("Foreign toplevel manager destroyed before .finished event");
++            zwlr_foreign_toplevel_manager_v1_destroy(manager_);
++            manager_ = nullptr;
++        }
+     }
+ }
+ 

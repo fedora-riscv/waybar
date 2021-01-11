@@ -1,11 +1,17 @@
 Name:           waybar
 Version:        0.9.5
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+
+# Fix build with spdlog 1.5 (f32)
+%if 0%{?fedora} == 32
+Patch0:         waybar-0.9.5-relax-spdlog-requirement.patch
+%endif
+Patch1:         %{url}/pull/969.patch#/waybar-0.9.5-fix-issues-in-wlr-taskbar.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -64,6 +70,10 @@ Recommends:     (font(fontawesome5free) or font(fontawesome))
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Mon Jan 11 2021 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.5-2
+- Fix build with spdlog 1.5 (f32)
+- Add patch for possible crashes in 'wlr/taskbar'
+
 * Wed Dec 23 2020 Aleksei Bavshin <alebastr89@gmail.com> - 0.9.5-1
 - Update to 0.9.5
 
