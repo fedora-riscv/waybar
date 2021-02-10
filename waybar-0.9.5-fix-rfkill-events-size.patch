@@ -1,0 +1,26 @@
+From 40f4dc9ecf26a8d9cd8d33b9bc88ff4dd6b3e508 Mon Sep 17 00:00:00 2001
+From: Aleksei Bavshin <alebastr89@gmail.com>
+Date: Mon, 1 Feb 2021 18:50:45 -0800
+Subject: [PATCH] fix(rfkill): accept events larger than v1 event size
+
+Kernel 5.11 added one more field to the `struct rfkill_event` and broke
+unnecessarily strict check in `rfkill.cpp`. According to `linux/rfkill.h`,
+we must accept events at least as large as v1 event size and should be
+prepared to get additional fields at the end of a v1 event structure.
+---
+ src/util/rfkill.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/util/rfkill.cpp b/src/util/rfkill.cpp
+index 82d29e91..e968ca18 100644
+--- a/src/util/rfkill.cpp
++++ b/src/util/rfkill.cpp
+@@ -61,7 +61,7 @@ void waybar::util::Rfkill::waitForEvent() {
+       break;
+     }
+ 
+-    if (len != RFKILL_EVENT_SIZE_V1) {
++    if (len < RFKILL_EVENT_SIZE_V1) {
+       throw std::runtime_error("Wrong size of RFKILL event");
+       continue;
+     }
