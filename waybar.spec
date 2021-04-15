@@ -1,6 +1,6 @@
 Name:           waybar
-Version:        0.9.5
-Release:        4%{?dist}
+Version:        0.9.6
+Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
@@ -11,8 +11,6 @@ Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 %if 0%{?fedora} == 32
 Patch0:         waybar-0.9.5-relax-spdlog-requirement.patch
 %endif
-Patch1:         %{url}/pull/969.patch#/waybar-0.9.5-fix-issues-in-wlr-taskbar.patch
-Patch2:         %{url}/commit/40f4dc9.patch#/waybar-0.9.5-fix-rfkill-events-size.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -71,6 +69,9 @@ Recommends:     (font(fontawesome5free) or font(fontawesome))
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Thu Apr 15 2021 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.6-1
+- Update to 0.9.6
+
 * Wed Feb 10 2021 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.5-4
 - Add patch for rfkill exception with kernel 5.11
 - Fixes rhbz#1927821
