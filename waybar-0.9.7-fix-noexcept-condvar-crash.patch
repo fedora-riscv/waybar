@@ -1,0 +1,66 @@
+From 5da268077cb0e53a5ff46fe9ca2dee8bf8e1c041 Mon Sep 17 00:00:00 2001
+From: Aleksei Bavshin <alebastr89@gmail.com>
+Date: Fri, 4 Jun 2021 20:22:16 -0700
+Subject: [PATCH] fix(util): protect std::condition_variable methods from
+ pthread_cancel
+
+The changes in GCC 11.x made `std::condition_variable` implementation
+internals `noexcept`. `noexcept` is known to interact particularly bad
+with `pthread_cancel`, i.e. `__cxxabiv1::__force_unwind` passing through
+the `noexcept` call stack frame causes a `std::terminate` call and
+immediate termination of the program
+
+Digging through the GCC ML archives[1] lead me to the idea of patching
+this with a few pthread_setcancelstate's. As bad as the solution is, it
+seems to be the best we can do within C++17 limits and without major
+rework.
+
+[1]: https://gcc.gnu.org/legacy-ml/gcc/2017-08/msg00156.html
+---
+ include/util/sleeper_thread.hpp | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/include/util/sleeper_thread.hpp b/include/util/sleeper_thread.hpp
+index 9adbe8f7b..d1c6ba0d7 100644
+--- a/include/util/sleeper_thread.hpp
++++ b/include/util/sleeper_thread.hpp
+@@ -8,6 +8,20 @@
+ 
+ namespace waybar::util {
+ 
++/**
++ * Defer pthread_cancel until the end of a current scope.
++ *
++ * Required to protect a scope where it's unsafe to raise `__forced_unwind` exception.
++ * An example of these is a call of a method marked as `noexcept`; an attempt to cancel within such
++ * a method may result in a `std::terminate` call.
++ */
++class CancellationGuard {
++  int oldstate;
++public:
++  CancellationGuard() { pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate); }
++  ~CancellationGuard() { pthread_setcancelstate(oldstate, &oldstate); }
++};
++
+ class SleeperThread {
+  public:
+   SleeperThread() = default;
+@@ -33,14 +47,16 @@ class SleeperThread {
+   bool isRunning() const { return do_run_; }
+ 
+   auto sleep_for(std::chrono::system_clock::duration dur) {
+-    std::unique_lock lk(mutex_);
++    std::unique_lock  lk(mutex_);
++    CancellationGuard cancel_lock;
+     return condvar_.wait_for(lk, dur, [this] { return signal_ || !do_run_; });
+   }
+ 
+   auto sleep_until(
+       std::chrono::time_point<std::chrono::system_clock, std::chrono::system_clock::duration>
+           time_point) {
+-    std::unique_lock lk(mutex_);
++    std::unique_lock  lk(mutex_);
++    CancellationGuard cancel_lock;
+     return condvar_.wait_until(lk, time_point, [this] { return signal_ || !do_run_; });
+   }
+ 

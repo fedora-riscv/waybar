@@ -1,16 +1,13 @@
 Name:           waybar
 Version:        0.9.7
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 
-# Fix build with spdlog 1.5 (f32)
-%if 0%{?fedora} == 32
-Patch0:         waybar-0.9.5-relax-spdlog-requirement.patch
-%endif
+Patch0:         %{url}/pull/1132.patch#/waybar-0.9.7-fix-noexcept-condvar-crash.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -69,6 +66,9 @@ Recommends:     (font(fontawesome5free) or font(fontawesome))
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Tue Jun 15 2021 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.7-2
+- Add patch for waybar crash on disabling outputs
+
 * Thu Apr 15 2021 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.7-1
 - Update to 0.9.7
 
