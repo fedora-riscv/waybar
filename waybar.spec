@@ -8,6 +8,7 @@ URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 
 Patch0:         %{url}/pull/1132.patch#/waybar-0.9.7-fix-noexcept-condvar-crash.patch
+Patch1:         %{url}/pull/1144.patch#/waybar-0.9.7-libfmt-8.0.0-compatibility.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
