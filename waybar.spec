@@ -1,14 +1,11 @@
 Name:           waybar
-Version:        0.9.7
-Release:        4%{?dist}
+Version:        0.9.8
+Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-
-Patch0:         %{url}/pull/1132.patch#/waybar-0.9.7-fix-noexcept-condvar-crash.patch
-Patch1:         %{url}/pull/1144.patch#/waybar-0.9.7-libfmt-8.0.0-compatibility.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -24,6 +21,7 @@ BuildRequires:  pkgconfig(gio-unix-2.0)
 BuildRequires:  pkgconfig(gtk-layer-shell-0)
 BuildRequires:  pkgconfig(gtkmm-3.0)
 BuildRequires:  pkgconfig(jsoncpp)
+BuildRequires:  pkgconfig(libevdev)
 BuildRequires:  pkgconfig(libinput)
 BuildRequires:  pkgconfig(libmpdclient)
 BuildRequires:  pkgconfig(libnl-3.0)
@@ -35,6 +33,7 @@ BuildRequires:  pkgconfig(spdlog) >= 1.3.1
 BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  pkgconfig(wayland-cursor)
 BuildRequires:  pkgconfig(wayland-protocols)
+BuildRequires:  pkgconfig(xkbregistry)
 
 Enhances:       sway
 Recommends:     (font(fontawesome5free) or font(fontawesome))
@@ -67,6 +66,9 @@ Recommends:     (font(fontawesome5free) or font(fontawesome))
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Mon Aug 16 2021 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.8-1
+- Update to 0.9.8
+
 * Fri Jul 23 2021 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.7-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
 
