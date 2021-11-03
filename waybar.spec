@@ -1,11 +1,13 @@
 Name:           waybar
 Version:        0.9.8
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+# fixes startup on river with 'river/tags' module
+Patch0:         %{url}/commit/024fd42e272f79cb08e594eb3af86c93b1446c91.patch#/waybar-0.9.8-river-support-urgent-tags.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -66,6 +68,9 @@ Recommends:     (font(fontawesome5free) or font(fontawesome))
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Tue Nov 02 2021 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.8-2
+- Add patch for 'river/tags' protocol error on River
+
 * Mon Aug 16 2021 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.8-1
 - Update to 0.9.8
 
