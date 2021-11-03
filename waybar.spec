@@ -1,6 +1,6 @@
 Name:           waybar
 Version:        0.9.8
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
@@ -68,6 +68,9 @@ Recommends:     (font(fontawesome5free) or font(fontawesome))
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Wed Nov 03 2021 Björn Esser <besser82@fedoraproject.org> - 0.9.8-3
+- Rebuild (jsoncpp)
+
 * Tue Nov 02 2021 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.8-2
 - Add patch for 'river/tags' protocol error on River
 
