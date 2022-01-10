@@ -11,7 +11,7 @@ BuildRequires:  gcc
 BuildRequires:  gcc-c++
 BuildRequires:  meson >= 0.49.0
 BuildRequires:  scdoc
-#BuildRequires:  systemd-rpm-macros
+BuildRequires:  systemd-rpm-macros
 
 BuildRequires:  pkgconfig(catch2)
 BuildRequires:  pkgconfig(date)
@@ -47,11 +47,8 @@ Suggests:       font(fontawesome5free)
 %autosetup -p1 -n Waybar-%{version}
 
 %build
-# FIXME: disable user service until a proper way to start it has been decided
-# see rhbz#1798811 for more context
 %meson \
-    -Dsndio=disabled \
-    -Dsystemd=disabled
+    -Dsndio=disabled
 %meson_build
 
 %install
@@ -59,6 +56,12 @@ Suggests:       font(fontawesome5free)
 
 %check
 %meson_test
+
+%post
+%systemd_user_post %{name}.service
+
+%preun
+%systemd_user_preun %{name}.service
 
 
 %files
@@ -69,10 +72,12 @@ Suggests:       font(fontawesome5free)
 %config(noreplace) %{_sysconfdir}/xdg/%{name}/style.css
 %{_bindir}/%{name}
 %{_mandir}/man5/%{name}*
+%{_userunitdir}/%{name}.service
 
 %changelog
 * Mon Jan 10 2022 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.9-1
 - Update to 0.9.9
+- Install systemd user service
 
 * Wed Nov 03 2021 Björn Esser <besser82@fedoraproject.org> - 0.9.8-3
 - Rebuild (jsoncpp)
