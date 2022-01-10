@@ -1,13 +1,11 @@
 Name:           waybar
-Version:        0.9.8
-Release:        3%{?dist}
+Version:        0.9.9
+Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-# fixes startup on river with 'river/tags' module
-Patch0:         %{url}/commit/024fd42e272f79cb08e594eb3af86c93b1446c91.patch#/waybar-0.9.8-river-support-urgent-tags.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -15,6 +13,7 @@ BuildRequires:  meson >= 0.49.0
 BuildRequires:  scdoc
 #BuildRequires:  systemd-rpm-macros
 
+BuildRequires:  pkgconfig(catch2)
 BuildRequires:  pkgconfig(date)
 BuildRequires:  pkgconfig(dbusmenu-gtk3-0.4)
 BuildRequires:  pkgconfig(fmt) >= 5.3.0
@@ -39,6 +38,7 @@ BuildRequires:  pkgconfig(xkbregistry)
 
 Enhances:       sway
 Recommends:     (font(fontawesome5free) or font(fontawesome))
+Suggests:       font(fontawesome5free)
 
 %description
 %{summary}.
@@ -57,6 +57,9 @@ Recommends:     (font(fontawesome5free) or font(fontawesome))
 %install
 %meson_install
 
+%check
+%meson_test
+
 
 %files
 %license LICENSE
@@ -68,6 +71,9 @@ Recommends:     (font(fontawesome5free) or font(fontawesome))
 %{_mandir}/man5/%{name}*
 
 %changelog
+* Mon Jan 10 2022 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.9-1
+- Update to 0.9.9
+
 * Wed Nov 03 2021 Björn Esser <besser82@fedoraproject.org> - 0.9.8-3
 - Rebuild (jsoncpp)
 
