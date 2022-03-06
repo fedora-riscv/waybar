@@ -1,6 +1,6 @@
 Name:           waybar
-Version:        0.9.9
-Release:        2%{?dist}
+Version:        0.9.10
+Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
@@ -16,7 +16,7 @@ BuildRequires:  systemd-rpm-macros
 BuildRequires:  pkgconfig(catch2)
 BuildRequires:  pkgconfig(date)
 BuildRequires:  pkgconfig(dbusmenu-gtk3-0.4)
-BuildRequires:  pkgconfig(fmt) >= 5.3.0
+BuildRequires:  pkgconfig(fmt) >= 7.0.0
 BuildRequires:  pkgconfig(gdk-pixbuf-2.0)
 BuildRequires:  pkgconfig(gio-unix-2.0)
 BuildRequires:  pkgconfig(gtk-layer-shell-0)
@@ -30,7 +30,7 @@ BuildRequires:  pkgconfig(libnl-genl-3.0)
 BuildRequires:  pkgconfig(libpulse)
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  pkgconfig(sigc++-2.0)
-BuildRequires:  pkgconfig(spdlog) >= 1.3.1
+BuildRequires:  pkgconfig(spdlog) >= 1.8.5
 BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  pkgconfig(wayland-cursor)
 BuildRequires:  pkgconfig(wayland-protocols)
@@ -75,6 +75,9 @@ Suggests:       font(fontawesome5free)
 %{_userunitdir}/%{name}.service
 
 %changelog
+* Sun Mar 06 2022 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.10-1
+- Update to 0.9.10 (#2061176)
+
 * Sat Jan 22 2022 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.9-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
 
