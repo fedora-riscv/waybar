@@ -1,5 +1,5 @@
 Name:           waybar
-Version:        0.9.10
+Version:        0.9.12
 Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
@@ -75,6 +75,9 @@ Suggests:       font(fontawesome5free)
 %{_userunitdir}/%{name}.service
 
 %changelog
+* Thu Mar 10 2022 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.12-1
+- Update to 0.9.12 (#2062615)
+
 * Sun Mar 06 2022 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.10-1
 - Update to 0.9.10 (#2061176)
 
