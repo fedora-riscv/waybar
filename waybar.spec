@@ -1,11 +1,12 @@
 Name:           waybar
-Version:        0.9.12
+Version:        0.9.13
 Release:        1%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # MIT for main package, Boost for bundled clara.hpp
 License:        MIT and Boost
 URL:            https://github.com/Alexays/Waybar
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Patch0:         %{url}/commit/3c182c9.patch#/waybar-0.9.13-add-gamemode-man-file-to-meson.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -31,6 +32,7 @@ BuildRequires:  pkgconfig(libpulse)
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  pkgconfig(sigc++-2.0)
 BuildRequires:  pkgconfig(spdlog) >= 1.8.5
+BuildRequires:  pkgconfig(upower-glib)
 BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  pkgconfig(wayland-cursor)
 BuildRequires:  pkgconfig(wayland-protocols)
@@ -75,6 +77,9 @@ Suggests:       font(fontawesome5free)
 %{_userunitdir}/%{name}.service
 
 %changelog
+* Mon May 23 2022 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.13-1
+- Update to 0.9.13 (#2089525)
+
 * Thu Mar 10 2022 Aleksei Bavshin <alebastr@fedoraproject.org> - 0.9.12-1
 - Update to 0.9.12 (#2062615)
 
