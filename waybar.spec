@@ -1,6 +1,6 @@
 Name:           waybar
 Version:        0.9.17
-Release:        2%{?dist}
+Release:        2.rv64%{?dist}
 Summary:        Highly customizable Wayland bar for Sway and Wlroots based compositors
 # Source files/overall project licensed as MIT, but
 # - BSL-1.0
@@ -64,12 +64,21 @@ Suggests:       font(fontawesome5free)
 %autosetup -p1 -n Waybar-%{version}
 
 %build
+%ifarch riscv64
+sed -i -e "s/dependency('systemd'/dependency('libsystemd'/g" meson.build
+%endif
+
 %meson \
     -Dsndio=disabled
 %meson_build
 
 %install
 %meson_install
+
+%ifarch riscv64
+mkdir -p %{buildroot}/usr/lib/systemd/user
+install -m 0644 %{_builddir}/Waybar-%{version}/%{_vendor}-%{_os}-build/%{name}.service %{buildroot}/usr/lib/systemd/user
+%endif
 
 %check
 %meson_test
@@ -92,6 +101,9 @@ Suggests:       font(fontawesome5free)
 %{_userunitdir}/%{name}.service
 
 %changelog
+* Wed May 17 2023 Liu Yang <Yang.Liu.sn@gmail.com> - 0.9.17-2.rv64
+- Fix build on riscv64.
+
 * Sat Jan 21 2023 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.17-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
 
